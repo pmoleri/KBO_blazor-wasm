@@ -1,0 +1,18 @@
+﻿@page "/loadexcelinv"
+@using Microsoft.JSInterop
+@using Infragistics.Documents.Excel
+@namespace KBO.InvenBlazor
+<h3>LoadExcelInv</h3>
+Load Current Inventory
+<LoadExcelFile WorkBookLoadComplete="GotFirstCell" />
+LoadPrior Inventory
+isCurrent = false;
+<LoadExcelFile WorkBookLoadComplete="GotFirstCell" />
+@code {
+    private bool isCurrent = true;
+    private async Task GotFirstCell(string value)
+    {
+        // Handle the button click event here
+    }
+
+}

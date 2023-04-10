@@ -1,0 +1,45 @@
+﻿
+@using Infragistics.Documents.Excel;
+@using System.IO;
+@using Microsoft.JSInterop
+@namespace KBO.InvenBlazor
+<h3>LoadExcelFile</h3>
+<InputFile OnChange="@LoadFile"  />
+
+@if (isLoading)
+{
+    <p>Uploading...</p>
+}
+
+@code {
+    [Inject]
+    public IJSRuntime Runtime { get; set; }
+
+    [Parameter]
+    public EventCallback<string> WorkBookLoadComplete { get; set; }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Workbook.InProcessRuntime = (IJSInProcessRuntime)this.Runtime;
+    }
+
+    private bool isLoading;
+    // private Workbook _workbook;
+    // public Worksheet FirstSheet;
+
+    private async void LoadFile(InputFileChangeEventArgs e)
+    {
+        isLoading = true;
+
+        var file = e.File;
+
+        using Stream read = file.OpenReadStream();
+        var stream = new MemoryStream();
+        await read.CopyToAsync(stream);
+
+        var _workbook = Workbook.Load(stream);
+        var FirstSheet = _workbook.Worksheets.FirstOrDefault();
+        var cell = FirstSheet.GetCell("A1");
+        WorkBookLoadComplete.InvokeAsync(cell.Value.ToString());
+    }
+}
