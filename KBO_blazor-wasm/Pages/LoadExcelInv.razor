@@ -4,15 +4,15 @@
 @namespace KBO.InvenBlazor
 <h3>LoadExcelInv</h3>
 Load Current Inventory
-<LoadExcelFile WorkBookLoadComplete="GotFirstCell" />
-LoadPrior Inventory
-isCurrent = false;
-<LoadExcelFile WorkBookLoadComplete="GotFirstCell" />
+<LoadExcelFile WorkBookLoadComplete="HandleWorkbookLoaded" />
+
+First Cell: @cellValue
+
 @code {
-    private bool isCurrent = true;
-    private async Task GotFirstCell(string value)
+    private string cellValue = "";
+    private async Task HandleWorkbookLoaded(string value)
     {
-        // Handle the button click event here
+        cellValue = value;
     }
 
 }
