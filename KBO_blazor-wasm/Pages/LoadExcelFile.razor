@@ -1,14 +1,40 @@
-﻿
-@using Infragistics.Documents.Excel;
+﻿@using Infragistics.Documents.Excel;
 @using System.IO;
+@using System.Data
 @using Microsoft.JSInterop
 @namespace KBO.InvenBlazor
+
 <h3>LoadExcelFile</h3>
-<InputFile OnChange="@LoadFile"  />
+<InputFile OnChange="@LoadFile" />
 
 @if (isLoading)
 {
     <p>Uploading...</p>
+}
+
+@if (ExcelData != null)
+{
+    <table>
+        <thead>
+            <tr>
+                @foreach (var header in ExcelData.Columns)
+                {
+                    <th>@header</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (DataRow row in ExcelData.Rows)
+            {
+                <tr>
+                    @foreach (var column in row.ItemArray)
+                    {
+                        <td>@column</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -17,29 +43,69 @@
 
     [Parameter]
     public EventCallback<string> WorkBookLoadComplete { get; set; }
+
+    public DataTable ExcelData { get; set; }
+    private bool isLoading = false;
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
         Workbook.InProcessRuntime = (IJSInProcessRuntime)this.Runtime;
     }
 
-    private bool isLoading;
-    // private Workbook _workbook;
-    // public Worksheet FirstSheet;
-
-    private async void LoadFile(InputFileChangeEventArgs e)
+    private async Task LoadFile(InputFileChangeEventArgs e)
     {
-        isLoading = true;
-
         var file = e.File;
 
-        using Stream read = file.OpenReadStream();
-        var stream = new MemoryStream();
-        await read.CopyToAsync(stream);
+        isLoading = true;
+        try
+        {
+            using Stream read = file.OpenReadStream();
+            var stream = new MemoryStream();
+            await read.CopyToAsync(stream);
 
-        var _workbook = Workbook.Load(stream);
-        var FirstSheet = _workbook.Worksheets.FirstOrDefault();
-        var cell = FirstSheet.GetCell("A1");
-        WorkBookLoadComplete.InvokeAsync(cell.Value.ToString());
+            var workbook = Workbook.Load(stream);
+            var firstSheet = workbook.Worksheets.FirstOrDefault();
+            ExcelData = WorksheetToDataTable(firstSheet);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+    }
+
+
+    DataTable WorksheetToDataTable(Worksheet worksheet)
+    {
+        // Create a new DataTable to hold the data
+        DataTable dataTable = new DataTable();
+
+        // Loop through the rows and columns of the worksheet
+        var first = true;
+        foreach (var row in worksheet.Rows)
+        {
+            if (first)
+            {
+                // If this is the first row, add columns to the DataTable
+                foreach (var cell in row.Cells)
+                {
+                    dataTable.Columns.Add(cell.Value.ToString());
+                }
+                first = false;
+            }
+            else
+            {
+                // Otherwise, add a new row to the DataTable
+                DataRow dataRow = dataTable.NewRow();
+                for (int j = 0; j < row.Cells.Count(); j++)
+                {
+                    dataRow[j] = row.GetCellValue(j);
+                }
+                dataTable.Rows.Add(dataRow);
+            }
+        }
+
+        return dataTable;
     }
 }
